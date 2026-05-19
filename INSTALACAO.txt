@@ -1,0 +1,133 @@
+═══════════════════════════════════════════════════════════
+  NVIDIA CT SERVER v2.0 - GUIA DE INSTALAÇÃO
+═══════════════════════════════════════════════════════════
+
+📥 PASSO 1 - BAIXAR PYTHON (só precisa fazer 1 vez)
+
+1. Acesse: https://www.python.org/downloads/
+2. Clique no botão amarelo "Download Python 3.x"
+3. Execute o instalador baixado
+4. ⚠️ IMPORTANTE: Marque a caixa "Add Python to PATH"
+5. Clique em "Install Now"
+6. Aguarde a instalação (1-2 minutos)
+7. Reinicie o computador
+
+═══════════════════════════════════════════════════════════
+
+📦 PASSO 2 - INSTALAR O SERVIDOR
+
+1. Baixe os 2 arquivos:
+   - nvidia_server.py
+   - Iniciar.bat
+
+2. Coloque os 2 arquivos na mesma pasta
+   Exemplo: C:\NVIDIA_CT\
+
+3. Pronto! Instalação concluída.
+
+═══════════════════════════════════════════════════════════
+
+▶️ PASSO 3 - PRIMEIRA EXECUÇÃO
+
+1. Dê DUPLO CLIQUE em "Iniciar.bat"
+
+2. Na primeira vez, vai instalar as bibliotecas (30 segundos)
+
+3. Uma janela vai pedir sua CHAVE DE ACESSO
+   - Digite a chave no formato: XXXXXXX-XXXXXX
+   - Clique OK
+
+4. Um ícone VERDE vai aparecer na bandeja do sistema
+   (perto do relógio, canto inferior direito)
+
+5. Pronto! O servidor está rodando.
+
+═══════════════════════════════════════════════════════════
+
+📱 PASSO 4 - USAR COM O APP ANDROID
+
+1. Deixe o servidor rodando no PC (ícone verde)
+2. Abra o app BIGZIIN ELITE no celular
+3. Use os controles remotos normalmente
+4. O programa será ativado/desativado automaticamente
+
+═══════════════════════════════════════════════════════════
+
+🎨 ÍCONES DE STATUS
+
+🟢 Verde   = Conectado e funcionando
+🟡 Amarelo = Aguardando conexão
+🔴 Vermelho = Erro (chave inválida ou sem internet)
+⚫ Cinza   = Desconectado
+
+═══════════════════════════════════════════════════════════
+
+🖱️ MENU (clique direito no ícone)
+
+• Status             → Ver informações da conexão
+• Forçar Ativar      → Ativar programa manualmente
+• Forçar Desativar   → Desativar programa manualmente
+
+═══════════════════════════════════════════════════════════
+
+⚙️ USO DIÁRIO
+
+1. Para INICIAR: Duplo clique em "Iniciar.bat"
+2. Para PARAR: Clique direito no ícone → Sair
+
+💡 DICA: Você pode criar um atalho do "Iniciar.bat" na
+         Área de Trabalho para facilitar!
+
+═══════════════════════════════════════════════════════════
+
+🔧 SOLUÇÃO DE PROBLEMAS
+
+❌ "Python não encontrado"
+   → Instale Python seguindo o PASSO 1
+   → Certifique-se de marcar "Add Python to PATH"
+   → Reinicie o computador após instalar
+
+❌ Servidor não conecta
+   → Verifique sua conexão com internet
+   → Verifique se a chave está correta no painel admin
+ 
+
+❌ Programa não ativa
+   → Desative antivírus temporariamente
+   → Execute "Iniciar.bat" como Administrador
+     (clique direito → Executar como administrador)
+
+❌ Ícone não aparece
+   → Procure na área "Ícones ocultos" (setinha perto do relógio)
+   → Verifique se Python está instalado corretamente
+
+❌ Erro "Já está em execução"
+   → O servidor já está rodando
+   → Procure o ícone verde na bandeja
+   → Se não achar: Ctrl+Shift+Esc → Finalizar python.exe
+
+═══════════════════════════════════════════════════════════
+
+📂 ARQUIVOS CRIADOS
+
+Após a primeira execução, serão criados na mesma pasta:
+
+• config.json         → Sua chave de acesso salva
+• nvidia_server.log   → Registro de atividades (para debug)
+
+Não delete esses arquivos!
+
+═══════════════════════════════════════════════════════════
+
+🔐 SEGURANÇA
+
+✓ Sua chave fica salva localmente (config.json)
+✓ Conexão segura via HTTPS
+✓ Sem coleta de dados pessoais
+
+═══════════════════════════════════════════════════════════
+
+
+@carlos_scunha
+
+═══════════════════════════════════════════════════════════
